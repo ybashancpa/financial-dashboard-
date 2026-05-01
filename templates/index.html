@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>📊 Financial Intelligence Dashboard</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh;font-size:14px}
+a{color:#58a6ff;text-decoration:none} a:hover{text-decoration:underline}
+
+.hdr{background:linear-gradient(135deg,#0d1117,#161b22,#1a2332);padding:14px 24px;
+     display:flex;align-items:center;justify-content:space-between;
+     border-bottom:1px solid #30363d;position:sticky;top:0;z-index:100}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-icon{font-size:22px}
+.hdr-title{font-size:18px;font-weight:700;color:#58a6ff;letter-spacing:.3px}
+.hdr-meta{display:flex;align-items:center;gap:12px}
+.hdr-updated{font-size:12px;color:#8b949e}
+.btn-refresh{background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:5px 14px;
+             border-radius:6px;cursor:pointer;font-size:12px;transition:.2s}
+.btn-refresh:hover{background:#388bfd;border-color:#388bfd}
+
+.macro-strip{display:flex;gap:10px;padding:12px 24px;background:#161b22;
+             border-bottom:1px solid #30363d;overflow-x:auto;flex-wrap:nowrap}
+.macro-card{background:#1c2128;border:1px solid #30363d;border-radius:10px;
+            padding:10px 16px;min-width:110px;text-align:center;flex-shrink:0;transition:.2s}
+.macro-card:hover{border-color:#58a6ff}
+.m-label{font-size:10px;color:#8b949e;margin-bottom:4px}
+.m-price{font-size:17px;font-weight:700;color:#e6edf3}
+.m-chg{font-size:11px;margin-top:3px}
+.up{color:#3fb950} .down{color:#f85149}
+
+.tab-bar{display:flex;gap:6px;padding:12px 24px;background:#161b22;
+         border-bottom:1px solid #30363d;position:sticky;top:53px;z-index:99}
+.tab-btn{background:#21262d;border:1px solid #30363d;color:#8b949e;padding:7px 18px;
+         border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:.2s}
+.tab-btn.active{background:#388bfd;border-color:#388bfd;color:#fff}
+.tab-btn:hover:not(.active){background:#30363d;color:#e6edf3}
+
+.tab-content{display:none;padding:20px 24px}
+.tab-content.active{display:block}
+
+.news-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.news-col-title{font-size:15px;font-weight:700;color:#58a6ff;padding-bottom:10px;
+                border-bottom:2px solid #30363d;margin-bottom:12px}
+.news-card{background:#1c2128;border:1px solid #30363d;border-radius:8px;
+           padding:12px 14px;margin-bottom:10px;border-right:3px solid #388bfd;transition:.15s}
+.news-card:hover{background:#21262d}
+.news-card.cat-macro{border-right-color:#388bfd}
+.news-card.cat-regulation{border-right-color:#8957e5}
+.news-card.cat-fintech{border-right-color:#3fb950}
+.news-card.cat-strategic{border-right-color:#d29922}
+.news-card.cat-news{border-right-color:#58a6ff}
+.news-source{display:inline-block;background:#21262d;font-size:10px;color:#8b949e;
+             padding:2px 7px;border-radius:8px;margin-bottom:5px}
+.news-title{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:5px}
+.news-summary{font-size:12px;color:#8b949e;line-height:1.65}
+.cpa-note{color:#d29922;font-weight:600}
+
+.stocks-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.stock-card{background:#1c2128;border:1px solid #30363d;border-radius:12px;overflow:hidden}
+.sc-trend{background:#21262d;padding:9px 14px;font-size:11px;color:#8b949e;
+          border-bottom:1px solid #30363d;display:flex;align-items:center;gap:8px}
+.trend-pill{background:#388bfd22;border:1px solid #388bfd;color:#58a6ff;
+            padding:2px 9px;border-radius:10px;font-size:11px}
+.sc-header{padding:12px 16px 6px;display:flex;align-items:baseline;gap:10px}
+.sc-ticker{font-size:26px;font-weight:800;color:#58a6ff;font-family:monospace}
+.sc-name{font-size:13px;color:#8b949e}
+.sc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px 16px 12px}
+.sm{background:#21262d;border-radius:7px;padding:7px 9px;text-align:center;border:1px solid #30363d}
+.sm-l{font-size:10px;color:#8b949e;margin-bottom:2px}
+.sm-v{font-size:13px;font-weight:700}
+.sc-analysis{margin:0 16px 10px;background:#0d1117;border-radius:8px;padding:13px;
+             font-size:12px;line-height:1.8;color:#c9d1d9;border:1px solid #21262d;
+             max-height:250px;overflow-y:auto}
+.sc-analysis strong{color:#58a6ff;font-weight:700}
+.sc-score{padding:10px 16px 14px;display:flex;align-items:center;gap:10px}
+.score-bar-wrap{flex:1;background:#21262d;border-radius:6px;height:8px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:6px;transition:width .5s}
+.score-label{font-size:13px;font-weight:700;min-width:45px;text-align:center}
+
+.div-section-title{font-size:15px;font-weight:700;padding:0 0 10px;
+                   border-bottom:2px solid #30363d;margin-bottom:14px}
+.div-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px}
+.div-card{background:#1c2128;border:1px solid #30363d;border-radius:12px;overflow:hidden}
+.div-card.il{border-top:3px solid #1f6feb}
+.div-card.us{border-top:3px solid #238636}
+.dc-header{padding:12px 16px 6px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.dc-ticker{font-size:20px;font-weight:800;font-family:monospace}
+.il .dc-ticker{color:#58a6ff} .us .dc-ticker{color:#3fb950}
+.dc-name{font-size:12px;color:#8b949e}
+.dc-sector{font-size:10px;background:#21262d;padding:2px 7px;border-radius:8px;color:#8b949e;margin-right:auto}
+.dc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px 16px 10px}
+.dm{background:#21262d;border-radius:6px;padding:6px 8px;text-align:center}
+.dm-l{font-size:9px;color:#8b949e;margin-bottom:2px}
+.dm-v{font-size:12px;font-weight:700}
+.dm-v.hi{color:#3fb950;font-size:14px}
+.dc-score{padding:8px 16px;display:flex;align-items:center;gap:8px;font-size:12px;color:#8b949e}
+.dc-score strong{color:#f1c40f}
+
+.wl-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.wl-title{font-size:16px;font-weight:700;color:#58a6ff}
+.wl-input-wrap{display:flex;gap:8px;margin-right:auto}
+#wl-input{background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 14px;
+           border-radius:8px;font-size:13px;width:180px;outline:none}
+#wl-input:focus{border-color:#58a6ff}
+.btn-add{background:#238636;border:none;color:#fff;padding:7px 18px;border-radius:8px;
+         cursor:pointer;font-size:13px}
+.btn-add:hover{background:#2ea043}
+.wl-table-wrap{background:#1c2128;border:1px solid #30363d;border-radius:10px;overflow:hidden}
+table.wl-table{width:100%;border-collapse:collapse}
+.wl-table th{background:#21262d;color:#8b949e;padding:10px 14px;text-align:center;
+             font-size:12px;font-weight:600;border-bottom:1px solid #30363d}
+.wl-table td{padding:10px 14px;text-align:center;border-top:1px solid #21262d;font-size:13px}
+.wl-table tr:hover td{background:#21262d}
+.wl-ticker{font-weight:700;font-family:monospace;color:#58a6ff;text-align:right!important}
+.wl-price{font-weight:700}
+.btn-remove{background:#da3633;border:none;color:#fff;padding:3px 9px;border-radius:6px;
+            cursor:pointer;font-size:11px}
+.btn-remove:hover{background:#b91c1c}
+.btn-analyze{background:#6e40c9;border:none;color:#fff;padding:3px 11px;border-radius:6px;
+             cursor:pointer;font-size:11px}
+.btn-analyze:hover{background:#8957e5}
+.wl-hint{font-size:11px;color:#6e7681;margin-top:8px;text-align:center}
+
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #30363d;
+         border-top-color:#58a6ff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.loading-box{padding:40px;text-align:center;color:#8b949e;font-size:13px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;
+               display:flex;align-items:flex-start;justify-content:center;
+               padding:40px 20px;overflow-y:auto}
+.modal-box{background:#161b22;border:1px solid #30363d;border-radius:14px;
+           width:100%;max-width:780px;position:relative}
+.modal-head{padding:16px 20px;border-bottom:1px solid #30363d;
+            display:flex;align-items:center;gap:12px}
+.modal-ticker{font-size:28px;font-weight:800;color:#58a6ff;font-family:monospace}
+.modal-company{font-size:14px;color:#8b949e}
+.modal-close{position:absolute;top:12px;left:16px;background:none;border:none;
+             color:#8b949e;font-size:18px;cursor:pointer;line-height:1}
+.modal-close:hover{color:#e6edf3}
+.modal-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 20px;
+               border-bottom:1px solid #30363d}
+.modal-analysis{padding:16px 20px;font-size:13px;line-height:1.9;color:#c9d1d9}
+.modal-analysis strong{color:#58a6ff}
+.modal-score-row{padding:10px 20px 16px;display:flex;align-items:center;gap:12px}
+.modal-spinner{padding:60px;text-align:center}
+
+@media(max-width:768px){
+  .news-grid,.stocks-grid{grid-template-columns:1fr}
+  .macro-strip{gap:7px;padding:10px 14px}
+  .tab-bar{padding:10px 14px;gap:4px}
+  .tab-btn{padding:6px 11px;font-size:12px}
+  .tab-content{padding:14px}
+  .modal-metrics{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <span class="hdr-icon">📊</span>
+    <span class="hdr-title">Financial Intelligence Dashboard</span>
+  </div>
+  <div class="hdr-meta">
+    <span class="hdr-updated" id="hdr-updated">⏱ טוען...</span>
+    <button class="btn-refresh" onclick="refreshAll()">🔄 רענן</button>
+  </div>
+</header>
+
+<div class="macro-strip" id="macro-strip">
+  <div class="loading-box" style="padding:10px 20px"><span class="spinner"></span></div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="news"      onclick="switchTab(this,'news')">📰 חדשות היום</button>
+  <button class="tab-btn"        data-tab="stocks"    onclick="switchTab(this,'stocks')">📈 מניות</button>
+  <button class="tab-btn"        data-tab="dividend"  onclick="switchTab(this,'dividend')">💰 דיבידנד</button>
+  <button class="tab-btn"        data-tab="watchlist" onclick="switchTab(this,'watchlist')">📋 מעקב</button>
+</div>
+
+<div class="tab-content active" id="tab-news">
+  <div class="loading-box"><span class="spinner"></span> טוען חדשות...</div>
+</div>
+<div class="tab-content" id="tab-stocks">
+  <div class="loading-box"><span class="spinner"></span> טוען מניות...</div>
+</div>
+<div class="tab-content" id="tab-dividend">
+  <div class="loading-box"><span class="spinner"></span> טוען דיבידנד...</div>
+</div>
+<div class="tab-content" id="tab-watchlist">
+  <div class="loading-box"><span class="spinner"></span> טוען רשימת מעקב...</div>
+</div>
+
+<!-- Analysis Modal -->
+<div id="analyze-modal" class="modal-overlay" style="display:none" onclick="modalBgClick(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-head">
+      <span class="modal-ticker" id="modal-ticker"></span>
+      <span class="modal-company" id="modal-company"></span>
+    </div>
+    <div id="modal-body">
+      <div class="modal-spinner"><span class="spinner" style="width:32px;height:32px;border-width:3px"></span>
+        <p style="margin-top:14px;color:#8b949e;font-size:13px">מנתח עם Gemini AI...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+const loaded = {news:false, stocks:false, dividend:false, watchlist:false};
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function mdToHtml(text) {
+  if (!text) return '';
+  return text
+    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n\* {3}/g, '\n• ')
+    .replace(/\n\*   /g, '\n• ')
+    .replace(/\n/g, '<br>');
+}
+
+function scoreColor(s) {
+  return s >= 7 ? '#3fb950' : s >= 4 ? '#d29922' : '#f85149';
+}
+
+function fmtChg(chg, up) {
+  const arrow = up ? '▲' : '▼';
+  const sign  = up ? '+' : '';
+  return `<span class="${up?'up':'down'}">${arrow} ${sign}${chg.toFixed(2)}%</span>`;
+}
+
+async function apiFetch(url, opts={}) {
+  const r = await fetch(url, opts);
+  if (!r.ok) {
+    const e = await r.json().catch(()=>({error:r.statusText}));
+    throw new Error(e.error || r.statusText);
+  }
+  return r.json();
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(btn, id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  localStorage.setItem('activeTab', id);
+  if (!loaded[id]) {
+    loaded[id] = true;
+    if (id === 'news')      loadNews();
+    if (id === 'stocks')    loadStocks();
+    if (id === 'dividend')  loadDividends();
+    if (id === 'watchlist') loadWatchlist();
+  }
+}
+
+// ── Macro ─────────────────────────────────────────────────────────────────────
+async function loadMacro() {
+  try {
+    const data = await apiFetch('/api/macro');
+    document.getElementById('hdr-updated').textContent = `⏱ עודכן: ${data.updated}`;
+    const strip = document.getElementById('macro-strip');
+    strip.innerHTML = data.items.map(m => `
+      <div class="macro-card">
+        <div class="m-label">${m.label}</div>
+        <div class="m-price">${m.price}</div>
+        <div class="m-chg ${m.up?'up':'down'}">${m.up?'▲':'▼'} ${Math.abs(m.change).toFixed(2)}%</div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('macro-strip').innerHTML =
+      `<div style="color:#f85149;font-size:12px;padding:10px">שגיאה בטעינת מאקרו: ${e.message}</div>`;
+  }
+}
+
+// ── News ──────────────────────────────────────────────────────────────────────
+async function loadNews() {
+  const tab = document.getElementById('tab-news');
+  try {
+    const data = await apiFetch('/api/news');
+    const g = data.globes || {};
+    const i = data.international || {};
+
+    // Globes column
+    let globesHtml = '';
+    const gSections = g.sections || {};
+    Object.entries(gSections).forEach(([sec, arts]) => {
+      (arts || []).forEach(a => {
+        globesHtml += `
+          <div class="news-card cat-news">
+            <div class="news-source">גלובס — ${sec}</div>
+            <div class="news-title"><a href="${a.url||'#'}" target="_blank">${a.title||''}</a></div>
+            <div class="news-summary">${a.summary||''}</div>
+          </div>`;
+      });
+    });
+
+    // International column
+    const CAT_LABELS = {
+      macro: '🌍 מאקרו גלובלי', regulation: '⚖️ רגולציה',
+      fintech: '💡 פינטק', strategic: '🎯 אסטרטגיה'
+    };
+    let intlHtml = '';
+    const iCats = i.categories || {};
+    Object.entries(iCats).forEach(([cat, arts]) => {
+      (arts || []).forEach(a => {
+        const label = CAT_LABELS[cat] || cat;
+        const sumHtml = (a.summary||'').replace(
+          /נקודה לתשומת לב לרו"ח ישראלי:/g,
+          '<span class="cpa-note">📌 נקודה לתשומת לב לרו"ח ישראלי:</span>'
+        );
+        intlHtml += `
+          <div class="news-card cat-${cat}">
+            <div class="news-source">${a.source||''} · ${label}</div>
+            <div class="news-title"><a href="${a.url||'#'}" target="_blank">${a.title||''}</a></div>
+            <div class="news-summary">${sumHtml}</div>
+          </div>`;
+      });
+    });
+
+    const dateStr = g.date || i.date || '';
+    tab.innerHTML = `
+      <div class="news-grid">
+        <div>
+          <div class="news-col-title">🇮🇱 גלובס <small style="color:#6e7681;font-size:11px">${dateStr}</small></div>
+          ${globesHtml || '<div style="color:#8b949e;font-size:12px">אין חדשות זמינות</div>'}
+        </div>
+        <div>
+          <div class="news-col-title">🌍 בינלאומי <small style="color:#6e7681;font-size:11px">${dateStr}</small></div>
+          ${intlHtml || '<div style="color:#8b949e;font-size:12px">אין חדשות זמינות</div>'}
+        </div>
+      </div>`;
+  } catch(e) {
+    tab.innerHTML = `<div style="color:#f85149;padding:20px">שגיאה: ${e.message}</div>`;
+  }
+}
+
+// ── Stocks ────────────────────────────────────────────────────────────────────
+async function loadStocks() {
+  const tab = document.getElementById('tab-stocks');
+  try {
+    const data = await apiFetch('/api/stocks');
+    const stocks = data.stocks || [];
+    if (!stocks.length) {
+      tab.innerHTML = '<div class="loading-box">אין נתוני מניות זמינים</div>';
+      return;
+    }
+    const cards = stocks.map(s => {
+      const sc   = scoreColor(s.gemini_score||0);
+      const pct  = Math.min((s.gemini_score||0)*10, 100);
+      return `
+        <div class="stock-card">
+          <div class="sc-trend">
+            <span style="color:#8b949e">טרנד:</span>
+            <span class="trend-pill">${s.trend||''}</span>
+            <span style="margin-right:auto;font-size:10px">${s.sector||''}</span>
+          </div>
+          <div class="sc-header">
+            <span class="sc-ticker">${s.ticker}</span>
+            <span class="sc-name">${s.company_name||''}</span>
+          </div>
+          <div class="sc-metrics">
+            <div class="sm"><div class="sm-l">מחיר</div><div class="sm-v">$${s.current_price||'–'}</div></div>
+            <div class="sm"><div class="sm-l">52W גבוה</div><div class="sm-v">$${s['52w_high']||'–'}</div></div>
+            <div class="sm"><div class="sm-l">52W נמוך</div><div class="sm-v">$${s['52w_low']||'–'}</div></div>
+            <div class="sm"><div class="sm-l">MA50</div><div class="sm-v">$${s.ma50||'–'}</div></div>
+            <div class="sm"><div class="sm-l">MA200</div><div class="sm-v">$${s.ma200||'–'}</div></div>
+            <div class="sm"><div class="sm-l">RSI</div><div class="sm-v">${s.rsi||'–'}</div></div>
+          </div>
+          <div class="sc-analysis">${mdToHtml(s.analysis||'')}</div>
+          <div class="sc-score">
+            <span style="font-size:12px;color:#8b949e">ציון Gemini:</span>
+            <div class="score-bar-wrap">
+              <div class="score-bar-fill" style="width:${pct}%;background:${sc}"></div>
+            </div>
+            <span class="score-label" style="color:${sc}">${s.gemini_score||0}/10</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    tab.innerHTML = `
+      <div style="margin-bottom:14px">
+        <span style="font-size:12px;color:#6e7681">דוח אחרון: ${data.day_label||''} ${data.date||''}</span>
+      </div>
+      <div class="stocks-grid">${cards}</div>`;
+  } catch(e) {
+    tab.innerHTML = `<div style="color:#f85149;padding:20px">שגיאה: ${e.message}</div>`;
+  }
+}
+
+// ── Dividends ─────────────────────────────────────────────────────────────────
+async function loadDividends() {
+  const tab = document.getElementById('tab-dividend');
+  try {
+    const data = await apiFetch('/api/dividends');
+    const ilStocks = data.il_stocks || [];
+    const usStocks = data.us_stocks || [];
+
+    function divCard(s, cls) {
+      const sc   = scoreColor(s.gemini_score||0);
+      const pct  = Math.min((s.gemini_score||0)*10, 100);
+      const yieldVal = cls === 'il'
+        ? (s.net_yield_il != null ? (s.net_yield_il*100).toFixed(1)+'%' : (s.gross_yield!=null ? (s.gross_yield*100).toFixed(1)+'%' : '–'))
+        : (s.yield != null ? (s.yield*100).toFixed(1)+'%' : (s.gross_yield!=null ? (s.gross_yield*100).toFixed(1)+'%' : '–'));
+      const payout   = s.payout   != null ? (s.payout*100).toFixed(0)+'%'  : '–';
+      const roe      = s.roe      != null ? (s.roe*100).toFixed(0)+'%'     : '–';
+      const growth   = s.consec_growth_years != null ? s.consec_growth_years+'y'  : '–';
+      const chowder  = s.chowder != null ? s.chowder.toFixed(1) : null;
+      const yieldLabel = cls === 'il' ? 'תשואה נטו' : 'תשואה';
+      return `
+        <div class="div-card ${cls}">
+          <div class="dc-header">
+            <span class="dc-ticker">${s.symbol||s.ticker||''}</span>
+            <span class="dc-name">${s.name||''}</span>
+            <span class="dc-sector">${s.sector||''}</span>
+          </div>
+          <div class="dc-metrics">
+            <div class="dm"><div class="dm-l">${yieldLabel}</div><div class="dm-v hi">${yieldVal}</div></div>
+            <div class="dm"><div class="dm-l">Payout</div><div class="dm-v">${payout}</div></div>
+            <div class="dm"><div class="dm-l">ROE</div><div class="dm-v">${roe}</div></div>
+            <div class="dm"><div class="dm-l">שנות גידול</div><div class="dm-v">${growth}</div></div>
+            ${chowder ? `<div class="dm"><div class="dm-l">Chowder</div><div class="dm-v">${chowder}</div></div>` : ''}
+          </div>
+          <div class="dc-score">
+            ⭐ ציון Gemini: <strong style="color:${sc}">${s.gemini_score||0}/10</strong>
+            <div class="score-bar-wrap" style="flex:1;margin-right:8px">
+              <div class="score-bar-fill" style="width:${pct}%;background:${sc}"></div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    tab.innerHTML = `
+      <div style="margin-bottom:14px">
+        <span style="font-size:12px;color:#6e7681">דוח חודשי: ${data.month||''}</span>
+      </div>
+      ${ilStocks.length ? `
+        <div class="div-section-title">🇮🇱 שוק ישראלי</div>
+        <div class="div-grid">${ilStocks.map(s=>divCard(s,'il')).join('')}</div>` : ''}
+      ${usStocks.length ? `
+        <div class="div-section-title">🇺🇸 שוק אמריקאי</div>
+        <div class="div-grid">${usStocks.map(s=>divCard(s,'us')).join('')}</div>` : ''}
+      ${!ilStocks.length && !usStocks.length ? '<div class="loading-box">אין נתוני דיבידנד זמינים</div>' : ''}`;
+  } catch(e) {
+    tab.innerHTML = `<div style="color:#f85149;padding:20px">שגיאה: ${e.message}</div>`;
+  }
+}
+
+// ── Watchlist ─────────────────────────────────────────────────────────────────
+function renderWatchlistHeader() {
+  return `
+    <div class="wl-header">
+      <span class="wl-title">📋 רשימת מעקב אישית</span>
+      <div class="wl-input-wrap">
+        <input id="wl-input" type="text" placeholder="הקלד טיקר (AAPL, LUMI.TA...)">
+        <button class="btn-add" onclick="addTicker()">+ הוסף</button>
+      </div>
+    </div>`;
+}
+
+function renderWatchlistTable(items) {
+  const rows = items.map(it => `
+    <tr id="wl-row-${it.ticker.replace('.','_')}">
+      <td class="wl-ticker">${it.ticker}</td>
+      <td class="wl-price ${it.up?'up':'down'}">${it.price}</td>
+      <td class="${it.up?'up':'down'}">${it.up?'▲ +':'▼ '}${Math.abs(it.change).toFixed(2)}%</td>
+      <td>${it.div_yield}</td>
+      <td>${it.forward_pe ?? '–'}</td>
+      <td>${it.market_cap}</td>
+      <td>
+        <button class="btn-analyze" onclick="analyzeTicker('${it.ticker}')">🔍 נתח</button>
+      </td>
+      <td><button class="btn-remove" onclick="removeTicker('${it.ticker}')">✕</button></td>
+    </tr>`).join('');
+
+  return `
+    <div class="wl-table-wrap">
+      <table class="wl-table">
+        <thead><tr>
+          <th style="text-align:right">טיקר</th>
+          <th>מחיר</th>
+          <th>שינוי יומי</th>
+          <th>תשואת דיב'</th>
+          <th>Forward P/E</th>
+          <th>שווי שוק</th>
+          <th>ניתוח</th>
+          <th>הסר</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <p class="wl-hint">⏱ המחירים מתרעננים כל 5 דקות | נשמר בשרת</p>`;
+}
+
+async function loadWatchlist() {
+  const tab = document.getElementById('tab-watchlist');
+  try {
+    const data = await apiFetch('/api/watchlist');
+    const items = data.tickers || [];
+    tab.innerHTML = renderWatchlistHeader() + renderWatchlistTable(items);
+    document.getElementById('wl-input')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') addTicker();
+    });
+  } catch(e) {
+    tab.innerHTML = renderWatchlistHeader() +
+      `<div style="color:#f85149;padding:20px">שגיאה: ${e.message}</div>`;
+  }
+}
+
+async function addTicker() {
+  const inp = document.getElementById('wl-input');
+  if (!inp) return;
+  const ticker = inp.value.trim().toUpperCase();
+  if (!ticker) return;
+  inp.value = '';
+  inp.placeholder = `מוסיף ${ticker}...`;
+  try {
+    const it = await apiFetch('/api/watchlist/add', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ticker})
+    });
+    inp.placeholder = 'הקלד טיקר (AAPL, LUMI.TA...)';
+    // reload whole watchlist to get fresh table
+    loaded.watchlist = false;
+    loadWatchlist();
+  } catch(e) {
+    inp.placeholder = `שגיאה: ${e.message}`;
+    setTimeout(() => { inp.placeholder = 'הקלד טיקר (AAPL, LUMI.TA...)'; }, 3000);
+  }
+}
+
+async function removeTicker(ticker) {
+  try {
+    await apiFetch('/api/watchlist/remove', {
+      method: 'DELETE',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ticker})
+    });
+    document.getElementById('wl-row-'+ticker.replace('.','_'))?.remove();
+  } catch(e) {
+    alert('שגיאה בהסרת ' + ticker + ': ' + e.message);
+  }
+}
+
+// ── Analyze Modal ─────────────────────────────────────────────────────────────
+async function analyzeTicker(ticker) {
+  const modal = document.getElementById('analyze-modal');
+  const body  = document.getElementById('modal-body');
+  document.getElementById('modal-ticker').textContent  = ticker;
+  document.getElementById('modal-company').textContent = '';
+  body.innerHTML = `
+    <div class="modal-spinner">
+      <span class="spinner" style="width:32px;height:32px;border-width:3px"></span>
+      <p style="margin-top:14px;color:#8b949e;font-size:13px">מנתח עם Gemini AI...</p>
+    </div>`;
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  try {
+    const d = await apiFetch('/api/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ticker})
+    });
+    document.getElementById('modal-company').textContent = d.company || '';
+    const sc  = scoreColor(d.score||0);
+    const pct = Math.min((d.score||0)*10, 100);
+    body.innerHTML = `
+      <div class="modal-metrics">
+        <div class="sm"><div class="sm-l">מחיר</div><div class="sm-v">${d.price||'–'}</div></div>
+        <div class="sm"><div class="sm-l">שווי שוק</div><div class="sm-v">${d.market_cap||'–'}</div></div>
+        <div class="sm"><div class="sm-l">RSI</div><div class="sm-v">${d.rsi??'–'}</div></div>
+        <div class="sm"><div class="sm-l">MA50 / MA200</div><div class="sm-v">$${d.ma50||'–'} / $${d.ma200||'–'}</div></div>
+        <div class="sm"><div class="sm-l">52W גבוה/נמוך</div><div class="sm-v">$${d.hi52||'–'} / $${d.lo52||'–'}</div></div>
+        <div class="sm"><div class="sm-l">תשואת דיב'</div><div class="sm-v">${d.div_yield||'–'}</div></div>
+        <div class="sm"><div class="sm-l">P/E</div><div class="sm-v">${d.pe||'–'}</div></div>
+        <div class="sm"><div class="sm-l">Forward P/E</div><div class="sm-v">${d.forward_pe||'–'}</div></div>
+        <div class="sm"><div class="sm-l">סקטור</div><div class="sm-v" style="font-size:11px">${d.sector||'–'}</div></div>
+      </div>
+      <div class="modal-analysis">${mdToHtml(d.analysis||'')}</div>
+      <div class="modal-score-row">
+        <span style="font-size:13px;color:#8b949e">ציון Gemini:</span>
+        <div class="score-bar-wrap">
+          <div class="score-bar-fill" style="width:${pct}%;background:${sc}"></div>
+        </div>
+        <span class="score-label" style="color:${sc}">${d.score||0}/10</span>
+      </div>`;
+  } catch(e) {
+    body.innerHTML = `<div style="color:#f85149;padding:24px">שגיאה: ${e.message}</div>`;
+  }
+}
+
+function closeModal() {
+  document.getElementById('analyze-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function modalBgClick(e) {
+  if (e.target === document.getElementById('analyze-modal')) closeModal();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ── Refresh all ───────────────────────────────────────────────────────────────
+function refreshAll() {
+  Object.keys(loaded).forEach(k => loaded[k] = false);
+  loadMacro();
+  const activeTab = localStorage.getItem('activeTab') || 'news';
+  loaded[activeTab] = true;
+  if (activeTab === 'news')      loadNews();
+  if (activeTab === 'stocks')    loadStocks();
+  if (activeTab === 'dividend')  loadDividends();
+  if (activeTab === 'watchlist') loadWatchlist();
+}
+
+// ── Auto-refresh macro every 5 min ───────────────────────────────────────────
+setInterval(loadMacro, 5 * 60 * 1000);
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+(function init() {
+  const last = localStorage.getItem('activeTab') || 'news';
+  const btn  = document.querySelector(`[data-tab="${last}"]`);
+  if (btn) switchTab(btn, last);
+  else {
+    loaded.news = true;
+    loadNews();
+  }
+  loadMacro();
+})();
+</script>
+</body>
+</html>
