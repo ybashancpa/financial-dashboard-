@@ -1,9 +1,6 @@
 services:
   - type: web
     name: financial-dashboard
-    runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
-    envVars:
-      - key: PORT
-        value: 8080
+    runtime: python3
+    buildCommand: pip3 install -r requirements.txt
+    startCommand: python3 app.py
