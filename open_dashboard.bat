@@ -1,0 +1,6 @@
+@echo off
+cd /d C:\Users\USER\globes-summary
+echo Regenerating dashboard...
+python dashboard_builder.py
+echo Opening dashboard...
+start "" dashboard.html

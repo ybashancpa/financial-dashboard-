@@ -1,0 +1,13 @@
+﻿market,symbol,name,sector,score,gross_yield,net_yield,payout,roe,de,mcap,beta,eps_ttm,divs_in_5y,consec_growth_years,div5_cagr,chowder,gemini_score
+IL,LUMI.TA,Bank Leumi le-Israel B.M.,Financial Services,85,4.6%,3.5%,38.3%,15.8%,,110.17B,0.443,6.86,5,3,66.9%,,5
+IL,MZTF.TA,Mizrahi Tefahot Bank Ltd.,Financial Services,80,4.5%,3.3%,42.4%,16.9%,,60.33B,0.235,21.23,5,3,66.7%,,5
+IL,LUMI.TA,Bank Leumi le-Israel B.M.,Financial Services,85,4.6%,3.5%,38.3%,15.8%,,110.17B,0.443,6.86,5,3,66.9%,,5
+IL,MZTF.TA,Mizrahi Tefahot Bank Ltd.,Financial Services,80,4.5%,3.3%,42.4%,16.9%,,60.33B,0.235,21.23,5,3,66.7%,,5
+US,WMT,Walmart Inc.,Consumer Defensive,85,75.0%,75.0%,34.4%,21.8%,64.443,1.05T,0.661,2.73,5,43,5.5%,80.5,6
+US,JNJ,Johnson & Johnson,Healthcare,60,2.3%,2.3%,60.2%,26.4%,67.73,553.30B,0.329,8.62,5,63,5.2%,7.6,9
+US,ADP,"Automatic Data Processing, Inc.",Technology,60,3.2%,3.2%,60.5%,73.8%,70.044,84.90B,0.856,10.72,5,23,11.5%,14.7,5
+US,KO,The Coca-Cola Company,Consumer Defensive,50,2.6%,2.6%,64.8%,43.4%,122.824,338.90B,0.361,3.18,5,23,4.5%,7.1,0
+US,PG,The Procter & Gamble Company,Consumer Defensive,60,2.9%,2.9%,61.8%,31.1%,67.651,342.51B,0.403,6.84,5,22,6.0%,8.9,0
+US,GIS,"General Mills, Inc.",Consumer Defensive,40,6.9%,6.9%,59.4%,23.6%,217.629,18.84B,0.0,4.09,5,6,4.1%,11.0,0
+US,MKC,"McCormick & Company, Incorporated",Consumer Defensive,75,3.8%,3.8%,30.0%,25.3%,65.158,13.67B,0.706,6.1,5,27,7.6%,11.4,0
+US,JNJ,Johnson & Johnson,Healthcare,60,2.3%,2.3%,60.2%,26.4%,67.73,553.30B,0.329,8.62,5,63,5.2%,7.6,9

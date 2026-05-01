@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>📊 Financial Intelligence Dashboard</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;
+     min-height:100vh;font-size:14px}
+a{color:#58a6ff;text-decoration:none} a:hover{text-decoration:underline}
+
+/* Header */
+.hdr{background:linear-gradient(135deg,#0d1117,#161b22,#1a2332);
+     padding:14px 24px;display:flex;align-items:center;justify-content:space-between;
+     border-bottom:1px solid #30363d;position:sticky;top:0;z-index:100}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-icon{font-size:22px}
+.hdr-title{font-size:18px;font-weight:700;color:#58a6ff;letter-spacing:.3px}
+.hdr-meta{display:flex;align-items:center;gap:12px}
+.hdr-updated{font-size:12px;color:#8b949e}
+.btn-refresh{background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:5px 14px;
+             border-radius:6px;cursor:pointer;font-size:12px;transition:.2s}
+.btn-refresh:hover{background:#388bfd;border-color:#388bfd}
+
+/* Macro strip */
+.macro-strip{display:flex;gap:10px;padding:12px 24px;background:#161b22;
+             border-bottom:1px solid #30363d;overflow-x:auto;flex-wrap:nowrap}
+.macro-card{background:#1c2128;border:1px solid #30363d;border-radius:10px;
+            padding:10px 16px;min-width:110px;text-align:center;flex-shrink:0;
+            transition:.2s} .macro-card:hover{border-color:#58a6ff}
+.m-label{font-size:10px;color:#8b949e;margin-bottom:4px}
+.m-price{font-size:17px;font-weight:700;color:#e6edf3}
+.m-chg{font-size:11px;margin-top:3px}
+.up{color:#3fb950} .down{color:#f85149}
+
+/* Tab bar */
+.tab-bar{display:flex;gap:6px;padding:12px 24px;background:#161b22;
+         border-bottom:1px solid #30363d;position:sticky;top:53px;z-index:99}
+.tab-btn{background:#21262d;border:1px solid #30363d;color:#8b949e;padding:7px 18px;
+         border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:.2s}
+.tab-btn.active{background:#388bfd;border-color:#388bfd;color:#fff}
+.tab-btn:hover:not(.active){background:#30363d;color:#e6edf3}
+
+/* Tab content */
+.tab-content{display:none;padding:20px 24px}
+.tab-content.active{display:block}
+
+/* News grid */
+.news-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.news-col-title{font-size:15px;font-weight:700;color:#58a6ff;padding-bottom:10px;
+                border-bottom:2px solid #30363d;margin-bottom:12px}
+.news-card{background:#1c2128;border:1px solid #30363d;border-radius:8px;
+           padding:12px 14px;margin-bottom:10px;border-right:3px solid #388bfd;
+           transition:.15s} .news-card:hover{background:#21262d}
+.news-card.cat-macro{border-right-color:#388bfd}
+.news-card.cat-regulation{border-right-color:#8957e5}
+.news-card.cat-fintech{border-right-color:#3fb950}
+.news-card.cat-strategic{border-right-color:#d29922}
+.news-card.cat-news{border-right-color:#58a6ff}
+.news-source{display:inline-block;background:#21262d;font-size:10px;color:#8b949e;
+             padding:2px 7px;border-radius:8px;margin-bottom:5px}
+.news-title{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:5px}
+.news-summary{font-size:12px;color:#8b949e;line-height:1.65}
+.cpa-note{color:#d29922;font-weight:600}
+
+/* Stock cards (spotlight) */
+.stocks-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.stock-card{background:#1c2128;border:1px solid #30363d;border-radius:12px;overflow:hidden}
+.sc-trend{background:#21262d;padding:9px 14px;font-size:11px;color:#8b949e;
+          border-bottom:1px solid #30363d;display:flex;align-items:center;gap:8px}
+.trend-pill{background:#388bfd22;border:1px solid #388bfd;color:#58a6ff;
+            padding:2px 9px;border-radius:10px;font-size:11px}
+.sc-header{padding:12px 16px 6px;display:flex;align-items:baseline;gap:10px}
+.sc-ticker{font-size:26px;font-weight:800;color:#58a6ff;font-family:monospace}
+.sc-name{font-size:13px;color:#8b949e}
+.sc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px 16px 12px}
+.sm{background:#21262d;border-radius:7px;padding:7px 9px;text-align:center;border:1px solid #30363d}
+.sm-l{font-size:10px;color:#8b949e;margin-bottom:2px}
+.sm-v{font-size:13px;font-weight:700}
+.sc-analysis{margin:0 16px 10px;background:#0d1117;border-radius:8px;padding:13px;
+              font-size:12px;line-height:1.8;color:#c9d1d9;border:1px solid #21262d;
+              max-height:250px;overflow-y:auto}
+.sc-analysis strong,.an-h{color:#58a6ff;font-weight:700}
+.sc-score{padding:10px 16px 14px;display:flex;align-items:center;gap:10px}
+.score-bar-wrap{flex:1;background:#21262d;border-radius:6px;height:8px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#388bfd,#3fb950);transition:width .5s}
+.score-label{font-size:13px;font-weight:700;color:#3fb950;min-width:45px;text-align:center}
+
+/* Dividend cards */
+.div-section-title{font-size:15px;font-weight:700;padding:0 0 10px;border-bottom:2px solid #30363d;margin-bottom:14px}
+.div-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px}
+.div-card{background:#1c2128;border:1px solid #30363d;border-radius:12px;overflow:hidden}
+.div-card.il{border-top:3px solid #1f6feb}
+.div-card.us{border-top:3px solid #238636}
+.dc-header{padding:12px 16px 6px;display:flex;align-items:baseline;gap:10px}
+.dc-ticker{font-size:20px;font-weight:800;font-family:monospace}
+.il .dc-ticker{color:#58a6ff} .us .dc-ticker{color:#3fb950}
+.dc-name{font-size:12px;color:#8b949e}
+.dc-sector{font-size:10px;background:#21262d;padding:2px 7px;border-radius:8px;color:#8b949e;margin-right:auto}
+.dc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px 16px 10px}
+.dm{background:#21262d;border-radius:6px;padding:6px 8px;text-align:center}
+.dm-l{font-size:9px;color:#8b949e;margin-bottom:2px}
+.dm-v{font-size:12px;font-weight:700}
+.dm-v.hi{color:#3fb950;font-size:14px}
+.dc-score{padding:8px 16px;display:flex;align-items:center;gap:8px;font-size:12px;color:#8b949e}
+.dc-score strong{color:#f1c40f}
+
+/* Watchlist */
+.wl-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.wl-title{font-size:16px;font-weight:700;color:#58a6ff}
+.wl-input-wrap{display:flex;gap:8px;margin-right:auto}
+#wl-input{background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:7px 14px;
+           border-radius:8px;font-size:13px;width:180px;outline:none}
+#wl-input:focus{border-color:#58a6ff}
+.btn-add{background:#238636;border:none;color:#fff;padding:7px 18px;border-radius:8px;
+         cursor:pointer;font-size:13px} .btn-add:hover{background:#2ea043}
+.wl-table-wrap{background:#1c2128;border:1px solid #30363d;border-radius:10px;overflow:hidden}
+table.wl-table{width:100%;border-collapse:collapse}
+.wl-table th{background:#21262d;color:#8b949e;padding:10px 14px;text-align:center;
+             font-size:12px;font-weight:600;border-bottom:1px solid #30363d}
+.wl-table td{padding:10px 14px;text-align:center;border-top:1px solid #21262d;font-size:13px}
+.wl-table tr:hover td{background:#21262d}
+.wl-ticker{font-weight:700;font-family:monospace;color:#58a6ff;text-align:right!important}
+.wl-price{font-weight:700}
+.btn-remove{background:#da3633;border:none;color:#fff;padding:3px 9px;border-radius:6px;
+            cursor:pointer;font-size:11px} .btn-remove:hover{background:#b91c1c}
+.wl-hint{font-size:11px;color:#6e7681;margin-top:8px;text-align:center}
+
+/* Score bar */
+.score-bar-wrap{flex:1;background:#21262d;border-radius:6px;height:8px}
+.score-bar-fill{height:100%;border-radius:6px}
+
+@media(max-width:768px){
+  .news-grid,.stocks-grid{grid-template-columns:1fr}
+  .macro-strip{gap:7px;padding:10px 14px}
+  .tab-bar{padding:10px 14px;gap:4px}
+  .tab-btn{padding:6px 11px;font-size:12px}
+  .tab-content{padding:14px}
+}</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <span class="hdr-icon">📊</span>
+    <span class="hdr-title">Financial Intelligence Dashboard</span>
+  </div>
+  <div class="hdr-meta">
+    <span class="hdr-updated">⏱ עודכן: 01/05/2026 08:35</span>
+    <button class="btn-refresh" onclick="location.reload()">🔄 רענן</button>
+  </div>
+</header>
+
+<div class="macro-strip"><div class="macro-card">
+  <div class="m-label">דולר/שקל</div>
+  <div class="m-price">2.944₪</div>
+  <div class="m-chg down">▼ 0.93%</div>
+</div><div class="macro-card">
+  <div class="m-label">S&amp;P 500</div>
+  <div class="m-price">7,209</div>
+  <div class="m-chg up">▲ 1.02%</div>
+</div><div class="macro-card">
+  <div class="m-label">ת&quot;א 125</div>
+  <div class="m-price">4,314</div>
+  <div class="m-chg up">▲ 0.03%</div>
+</div><div class="macro-card">
+  <div class="m-label">US 10Y</div>
+  <div class="m-price">4.39%</div>
+  <div class="m-chg down">▼ 0.63%</div>
+</div><div class="macro-card">
+  <div class="m-label">נפט ברנט</div>
+  <div class="m-price">$111</div>
+  <div class="m-chg down">▼ 5.91%</div>
+</div><div class="macro-card">
+  <div class="m-label">זהב</div>
+  <div class="m-price">$4,625</div>
+  <div class="m-chg up">▲ 0.23%</div>
+</div></div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="news"      onclick="switchTab(this,'news')">📰 חדשות היום</button>
+  <button class="tab-btn"        data-tab="stocks"    onclick="switchTab(this,'stocks')">📈 מניות</button>
+  <button class="tab-btn"        data-tab="dividend"  onclick="switchTab(this,'dividend')">💰 דיבידנד</button>
+  <button class="tab-btn"        data-tab="watchlist" onclick="switchTab(this,'watchlist')">📋 מעקב</button>
+</div>
+
+<div class="tab-content active" id="tab-news"><div class="news-grid">
+  <div>
+    <div class="news-col-title">🇮🇱 גלובס <small style="color:#6e7681;font-size:11px">01/05/2026</small></div>
+    <div class="news-card cat-news">
+  <div class="news-source">גלובס — ראשי</div>
+  <div class="news-title"><a href="#" target="_blank">בנק ישראל: ריבית נותרת על 4.5%</a></div>
+  <div class="news-summary">הוועדה המוניטרית החליטה להותיר את הריבית ללא שינוי לאור הנתונים המאקרו-כלכליים האחרונים.</div>
+</div><div class="news-card cat-news">
+  <div class="news-source">גלובס — ראשי</div>
+  <div class="news-title"><a href="#" target="_blank">מדד המחירים לצרכן עלה ב-0.3%</a></div>
+  <div class="news-summary">האינפלציה מתמתנת בהדרגה, אך נותרת מעל יעד הבנק המרכזי.</div>
+</div><div class="news-card cat-news">
+  <div class="news-source">גלובס — ראשי</div>
+  <div class="news-title"><a href="#" target="_blank">חברות ישראליות בהייטק מגייסות 1.2 מיליארד דולר</a></div>
+  <div class="news-summary">גל גיוסים חדש בסטארטאפים ישראלים, בדגש על AI ו-Cybersecurity.</div>
+</div><div class="news-card cat-news">
+  <div class="news-source">גלובס — כלכלה</div>
+  <div class="news-title"><a href="#" target="_blank">התוצר הגולמי צמח ב-2.1% ברבעון הראשון</a></div>
+  <div class="news-summary">הצמיחה מעל הציפיות, מונעת על ידי יצוא שירותי טכנולוגיה.</div>
+</div><div class="news-card cat-news">
+  <div class="news-source">גלובס — כלכלה</div>
+  <div class="news-title"><a href="#" target="_blank">יצוא ישראלי שובר שיאים</a></div>
+  <div class="news-summary">נתוני סחר חוץ מצביעים על יצוא שיא בתעשיות הטכנולוגיה והפארמה.</div>
+</div>
+  </div>
+  <div>
+    <div class="news-col-title">🌍 בינלאומי <small style="color:#6e7681;font-size:11px">01/05/2026</small></div>
+    <div class="news-card cat-macro">
+  <div class="news-source">Bloomberg · 🌍 מאקרו גלובלי</div>
+  <div class="news-title"><a href="#" target="_blank">Fed Signals Pause in Rate Hikes</a></div>
+  <div class="news-summary">הפד מסמן הפסקה במחזור העלאות הריבית לאור ירידת האינפלציה. נקודה לתשומת לב לרו&quot;ח ישראלי: עשוי להשפיע על שער הדולר/שקל ועל עלויות מימון חברות ישראליות.</div>
+</div><div class="news-card cat-macro">
+  <div class="news-source">Financial Times · 🌍 מאקרו גלובלי</div>
+  <div class="news-title"><a href="#" target="_blank">European Growth Stalls in Q1</a></div>
+  <div class="news-summary">הכלכלה האירופית מאטה, עם צמיחה אפסית ברבעון הראשון. נקודה לתשומת לב לרו&quot;ח ישראלי: חברות ישראליות עם חשיפה לאירופה עשויות להרגיש לחץ על ההכנסות.</div>
+</div><div class="news-card cat-regulation">
+  <div class="news-source">Bloomberg · ⚖️ רגולציה</div>
+  <div class="news-title"><a href="#" target="_blank">SEC Tightens Crypto Reporting Rules</a></div>
+  <div class="news-summary">רשות ניירות הערך האמריקאית מחמירה דרישות דיווח לנכסי קריפטו. נקודה לתשומת לב לרו&quot;ח ישראלי: חברות ישראליות עם פעילות קריפטו יצטרכו לעמוד בתקנות החדשות.</div>
+</div><div class="news-card cat-fintech">
+  <div class="news-source">MIT Tech Review · 💡 פינטק</div>
+  <div class="news-title"><a href="#" target="_blank">AI Models Revolutionize Financial Forecasting</a></div>
+  <div class="news-summary">מודלי AI משנים את עולם החיזוי הפיננסי עם דיוק חסר תקדים. נקודה לתשומת לב לרו&quot;ח ישראלי: כלים חדשים לניתוח פיננסי עשויים לשפר ביקורת ובדיקת נאותות.</div>
+</div>
+  </div>
+</div></div>
+<div class="tab-content"        id="tab-stocks"><div style="margin-bottom:14px">
+  <span style="font-size:12px;color:#6e7681">דוח אחרון: יום שישי 01/05/2026</span>
+</div>
+<div class="stocks-grid"><div class="stock-card">
+  <div class="sc-trend">
+    <span style="color:#8b949e">טרנד:</span>
+    <span class="trend-pill">AI Observability and Interpretability for Enterprise Adoption</span>
+    <span style="margin-right:auto;font-size:10px">Technology</span>
+  </div>
+  <div class="sc-header">
+    <span class="sc-ticker">DDOG</span>
+    <span class="sc-name">Datadog, Inc.</span>
+  </div>
+  <div class="sc-metrics">
+    <div class="sm"><div class="sm-l">מחיר</div><div class="sm-v">$132.19</div></div>
+    <div class="sm"><div class="sm-l">52W גבוה</div><div class="sm-v">$201.69</div></div>
+    <div class="sm"><div class="sm-l">52W נמוך</div><div class="sm-v">$98.01</div></div>
+    <div class="sm"><div class="sm-l">MA50</div><div class="sm-v">$121.3</div></div>
+    <div class="sm"><div class="sm-l">MA200</div><div class="sm-v">$138.07</div></div>
+    <div class="sm"><div class="sm-l">RSI</div><div class="sm-v">81.9</div></div>
+  </div>
+  <div class="sc-analysis">שלום רב,<br><br>כאנליסט פיננסי בכיר, אני מציג בפניכם ניתוח מעמיק של חברת Datadog (DDOG), בהקשר לטרנד המתפתח של AI Observability ו-Interpretability לאימוץ ארגוני.<br><br><strong class="an-h">🎯 **למה עכשיו:</strong>**<br>אנו עדים לגידול דרמטי בחששות סביב הפרעות פוטנציאליות ממערכות AI, וצורך הולך וגובר בכלים ל&quot;דיבוג מודלי LLM&quot;. ככל שמודלי AI, ובפרט מודלי שפה גדולים, הופכים לחיוניים לפעילות ארגונית, הדרישה לפלטפורמות אובזרווביליטי, ניטור ופירוש איתנות להבטחת אמינותם, ביצועיהם ופריסתם האתית היא עליונה. Datadog, כמובילה בתחום האובזרווביליטי, ממוקמת באופן ייחודי להרחיב את היצעיה ולספק תובנות וכלים מיוחדים לאובזרווביליטי של AI, מה שמהווה וקטור צמיחה משמעותי עם התבגרות ועליית חשיבות אימוץ ה-AI לעסקים.<br><br><strong class="an-h">🏆 **יתרון תחרותי (Moat):</strong>**<br>ל-Datadog מספר יתרונות תחרותיים מרכזיים. הפלטפורמה המאוחדת שלהם, המשלבת ניטור תשתיות, אפליקציות, לוגים, אבטחה וכעת גם אובזרווביליטי של AI, מספקת &quot;פאנל יחיד&quot; לניהול כלל סביבות הענן. אינטגרציה עמוקה זו יוצרת עלויות מעבר גבוהות עבור לקוחות, ומקשה עליהם להחליף ספקים. המוניטין החזק שלהם בקרב מפתחים ומהנדסי SRE, יחד עם קצב חדשנות גבוה, מחזקים את מעמדם כמובילי שוק.<br><br><strong class="an-h">👔 **ניסיון ההנהלה:</strong>**<br>Datadog היא חברה גדולה ומצליחה עם שווי שוק של למעלה מ-47 מיליארד דולר ו-8,100 עובדים. נתונים אלו מצביעים על הנהלה מנוסה ויעילה, שהוכיחה יכולת להוביל צמיחה מהירה ולהתאים את החברה לשינויים טכנולוגיים ודרישות שוק. המעורבות של מנהלים בכירים (כמו ה-CTO בעסקאות Insiders) מעידה על ניסיון עמוק ומוביל בתעשייה.<br><br><strong class="an-h">💰 **ניתוח כספי:</strong>**<br>החברה מציגה צמיחה מרשימה בהכנסות, מ-2.13 מיליארד דולר ב-2023 ל-2.68 מיליארד דולר ב-2024, עם תחזית של 3.43 מיליארד דולר ב-2025. זהו קצב צמיחה בריא המצביע על ביקוש מתמשך למוצריה. הרווח הנקי מראה תנודתיות מסוימת (48.57 מיליון דולר ב-2023, 183.75 מיליון דולר ב-2024, וצפי לירידה ל-107.74 מיליון דולר ב-2025), אך החברה רווחית. יחס ה-P/E הנוכחי הגבוה מאוד (440.63) משקף ציפיות צמיחה אגרסיביות. יחס ה-Forward P/E של 50.06 (המבוסס על EPS צפוי גבוה משמעותית של 2.64) אומנם נמוך יותר אך עדיין מעיד על הערכת שווי גבוהה יחסית, אופיינית לחברות צמיחה טכנולוגיות.<br><br><strong class="an-h">📈 **ניתוח טכני:</strong>**<br>המחיר הנוכחי של $132.19 ממוקם מעל לממוצע נע ל-50 יום ($121.3), מה שמעיד על מומנטום חיובי בטווח הקצר. עם זאת, הוא נמוך מהממוצע נע ל-200 יום ($138.07), מה שמרמז על מגמה פחות חיובית בטווח הארוך יותר, או פשוט תקופת התבססות. מדד ה-RSI (14) עומד על 81.9, מה שמעיד על כך שהמניה נמצאת כרגע באזור &quot;קניית יתר&quot; חזק, ולפיכך ייתכן שהיא בשלה לתיקון מחירים בטווח הקצר.<br><br><strong class="an-h">👥 **משקיעים מוסדיים:</strong>**<br>חמשת המשקיעים המוסדיים הגדולים ביותר בחברה – Vanguard Group, Blackrock, FMR, Price (T.Rowe) Associates, ו-State Street Corporation – מחזיקים במצטבר בנתח משמעותי מהמניות (למעלה מ-35%). העובדה שכל המוסדיים המובילים הגדילו את פוזיציותיהם באחוזים ניכרים (בין 0.03% ל-11.37%) מעידה על אמון חזק של השוק המוסדי בפוטנציאל הצמיחה של החברה.<br><br><strong class="an-h">🏦 **פעילות Insiders:</strong>**<br>במהלך שלושת החודשים האחרונים, נצפו מספר עסקאות מכירה של מניות על ידי מנהלים בכירים, ביניהם חבר הדירקטוריון AGARWAL AMIT והמנהל הטכנולוגי הראשי LE-QUOC ALEXIS T (בהנחה שהתאריכים המצוינים 2026-04 הם טעות דפוס ומתייחסים ל-2024-04). מכירות אלו, בסכומים של מיליוני דולרים, עשויות להצביע על מימוש רווחים ו/או גיוון תיקים אישיים של המנהלים, ואינן בהכרח סימן שלילי חזק. עם זאת, בהיעדר עסקאות קנייה מצד Insiders, יש להתייחס לכך בזהירות מסוימת, במיוחד לאור הערכת השווי הגבוהה.<br><br><strong class="an-h">⚠️ **סיכונים עיקריים:</strong>**<br>1.  **תחרות עזה:** שוק האובזרווביליטי צפוף ומתפתח במהירות, עם מתחרים מבוססים (כמו Splunk, Dynatrace) וספקי שירותי ענן גדולים המפתחים פתרונות משלהם (AWS CloudWatch, Azure Monitor).<br>2.  **הערכת שווי גבוהה:** יחס ה-P/E הגבוה וה-Forward P/E מעידים על כך שהחברה נסחרת בפרמיה משמעותית. כל פיספוס קל בצפיות הצמיחה או הרווחיות עלול להוביל לירידת מחיר חדה.<br>3.  **האטה כלכלית והוצאות IT:** כחברת SaaS בענן, Datadog חשופה להשפעות של האטה כלכלית רחבה, שעלולה להוביל לקיצוצים בתקציבי ה-IT בארגונים ולהאט את קצב צמיחת ההכנסות.<br>4.  **אתגרי אימוץ AI ואבטחה:** למרות הפוטנציאל בטרנד ה-AI Observability, ישנם סיכונים הקשורים לקצב האימוץ בפועל על ידי ארגונים, תחרות ספציפית בתחום זה ודרישות אבטחה ורגולציה מתפתחות סביב נתוני AI.<br><br><strong class="an-h">✅ **תמצית:</strong>**<br>Datadog היא חברה חזקה עם יתרון תחרותי ברור, ממוקמת אסטרטגית לנצל את טרנד ה-AI Observability המתפתח, ונהנית מתמיכה מוסדית רחבה. עם זאת, המניה נסחרת בהערכת שווי גבוהה מאוד וסובלת מ-RSI גבוה המצביע על קניית יתר בטווח הקצר, לצד מכירות Insiders.<br><br>**המלצה:** מדובר במניה שבהחלט **מעניינת למעקב צמוד** עבור רואי חשבון המחפשים השקעות ערך עם פוטנציאל צמיחה משמעותי.<br><br>**טריגרים לכניסה:**<br>*   **תיקון מחיר משמעותי:** תיקון מטה שיוביל את המניה לרמות מחיר אטרקטיביות יותר (למשל, סביב הממוצע נע ל-200 יום או נמוך יותר), ויביא את ה-RSI לרמות סבירות יותר, יציג הזדמנות כניסה טובה יותר.<br>*   **אישור נוסף לצמיחה בתחום ה-AI:** דוחות עתידיים שיצביעו על האצה משמעותית באימוץ ומוניטיזציה של פתרונות ה-AI Observability שלהם.<br>*   **שיפור ברווחיות:** מגמה ברורה של שיפור ברווחיות הנקייה, שתצדיק טוב יותר את הערכת השווי הגבוהה.</div>
+  <div class="sc-score">
+    <span style="font-size:12px;color:#8b949e">ציון Gemini:</span>
+    <div class="score-bar-wrap">
+      <div class="score-bar-fill" style="width:0%;background:#f85149"></div>
+    </div>
+    <span class="score-label" style="color:#f85149">0/10</span>
+  </div>
+</div><div class="stock-card">
+  <div class="sc-trend">
+    <span style="color:#8b949e">טרנד:</span>
+    <span class="trend-pill">Prediction Markets as a Source of Economic and Regulatory Intelligence</span>
+    <span style="margin-right:auto;font-size:10px">Financial Services</span>
+  </div>
+  <div class="sc-header">
+    <span class="sc-ticker">ICE</span>
+    <span class="sc-name">Intercontinental Exchange, Inc.</span>
+  </div>
+  <div class="sc-metrics">
+    <div class="sm"><div class="sm-l">מחיר</div><div class="sm-v">$158.09</div></div>
+    <div class="sm"><div class="sm-l">52W גבוה</div><div class="sm-v">$189.35</div></div>
+    <div class="sm"><div class="sm-l">52W נמוך</div><div class="sm-v">$143.17</div></div>
+    <div class="sm"><div class="sm-l">MA50</div><div class="sm-v">$159.87</div></div>
+    <div class="sm"><div class="sm-l">MA200</div><div class="sm-v">$164.04</div></div>
+    <div class="sm"><div class="sm-l">RSI</div><div class="sm-v">44.3</div></div>
+  </div>
+  <div class="sc-analysis">**ניתוח מניה: ICE | Intercontinental Exchange, Inc.**<br><br><strong class="an-h">🎯 **למה עכשיו:</strong>**<br>הטרנד המתפתח של שוקי חיזוי כמקור למודיעין כלכלי ורגולטורי מציב את Intercontinental Exchange (ICE) בעמדה ייחודית. עם המוניטין שלה בהפעלת בורסות גלובליות, חדרי סליקה ומתן שירותי נתונים קריטיים לגופים פיננסיים ורגולטורים, ICE ממוקמת באופן אידיאלי למנף את המגמה הזו. הפוטנציאל של שווקי החיזוי להפוך לכלי לגיטימי לחיזוי כלכלי בזמן אמת מהווה הזדמנות צמיחה חדשנית עבור ICE, שתוכל לשלב, לפתח או לספק את הטכנולוגיה והשירותים הנדרשים לחיבור שווקים אלו עם משתמשים מוסדיים וממשלתיים.<br><br><strong class="an-h">🏆 **יתרון תחרותי (Moat):</strong>**<br>ל-ICE יש חומת הגנה (Moat) חזקה הבנויה על מספר עמודים:<br>1.  **קנה מידה ורשת:** הפעלת בורסות גלובליות מובילות כמו NYSE, עם היקפי מסחר עצומים ורישיונות רגולטוריים קשיחים, יוצרת חסמי כניסה כבדים ויתרונות רשת.<br>2.  **חדרי סליקה:** בעלות על חדרי סליקה קריטיים, המהווים צד נגדי מרכזי בעסקאות ומפחיתים סיכונים סיסטמיים, דורשת הון עצום ועמידה ברגולציה מחמירה.<br>3.  **שירותי נתונים וטכנולוגיה:** אספקת נתונים פיננסיים בזמן אמת, אינדקסים ושירותי טכנולוגיה מתקדמים למוסדות פיננסיים ובנקים מרכזיים, יוצרת תלות גבוהה ועלויות החלפה משמעותיות עבור הלקוחות.<br>4.  **קשרים רגולטוריים:** ניסיון עשיר ויחסים ארוכי טווח עם רגולטורים ברחבי העולם, מעניקים ל-ICE יתרון מהותי בהבנה וניווט בסביבה הרגולטורית המורכבת.<br><br><strong class="an-h">👔 **ניסיון ההנהלה:</strong>**<br>ההנהלה של ICE נהנית מניסיון עשיר ומוכח בתעשיית שירותי הפיננסים, הטכנולוגיה והבורסות העולמיות. ניהול תשתית שוק פיננסי כה מורכבת וקריטית, הדורשת יכולות עמוקות בחדשנות טכנולוגית, ציות רגולטורי ואסטרטגיה עסקית גלובלית, מעיד על צוות הנהלה מנוסה ומיומן ביותר. יכולת החברה לבצע רכישות אסטרטגיות ולהרחיב את מגוון השירותים שלה תוך שמירה על צמיחה יציבה, מחזקת את הערכה לכישורי ההנהלה.<br><br><strong class="an-h">💰 **ניתוח כספי:</strong>**<br>החברה מציגה צמיחה מרשימה ויציבה בשנים האחרונות ובתחזיות:<br>*   **הכנסות (Revenue):** צמיחה חזקה וקונסיסטנטית מהכנסות של 9.90 מיליארד דולר ב-2023, ל-11.76 מיליארד דולר צפוי ב-2024 (עלייה של כ-18.78%), ול-12.64 מיליארד דולר צפוי ב-2025 (עלייה של כ-7.48%).<br>*   **רווח נקי (Net Income):** גידול משמעותי ברווח הנקי מ-2.37 מיליארד דולר ב-2023, ל-2.75 מיליארד דולר צפוי ב-2024 (עלייה של כ-15.96%), ול-3.31 מיליארד דולר צפוי ב-2025 (עלייה של כ-20.36%), המעיד על שיפור ברווחיות וביעילות תפעולית.<br>*   **רווח למניה (EPS):** מגמת עלייה ברורה, עם EPS נגרר של 6.88 דולר ו-EPS צפוי של 8.72 דולר, המצביע על ציפיות חיוביות לגידול מהותי ברווחים העתידיים.<br>*   **מכפילי רווח:** מכפיל רווח נוכחי (P/E) של 27.45 יורד משמעותית למכפיל רווח עתידי (Forward P/E) של 18.13, דבר המצביע על תמחור אטרקטיבי ביחס לציפיות הצמיחה ברווחים. הצמיחה ברווח הנקי צפויה להיות מהירה יותר מצמיחת ההכנסות.<br><br><strong class="an-h">📈 **ניתוח טכני:</strong>**<br>המחיר הנוכחי של המניה, 158.09 דולר, נמצא מתחת לממוצעים הנעים ל-50 ו-200 יום (MA50: $159.87, MA200: $164.04). זה מצביע על מגמת מסחר ניטרלית עד ירידה קלה בטווח הקצר. המניה נסחרת בחלק התחתון של טווח 52 השבועות שלה ($143.17 - $189.35). מדד ה-RSI(14) עומד על 44.3, מה שמעיד שהמניה אינה במצב של קניית יתר או מכירת יתר, אך עם נטייה קלה לכיוון מומנטום חלש יותר. נכון לעכשיו, המניה אינה מראה מגמת עלייה טכנית ברורה.<br><br><strong class="an-h">👥 **משקיעים מוסדיים:</strong>**<br>חמשת המשקיעים המוסדיים הגדולים – Vanguard, Blackrock, State Street, Morgan Stanley ו-Harris Associates – הגדילו כולם את אחזקותיהם במניה. גידול של 52.85% באחזקות של Harris Associates הוא משמעותי במיוחד, ומעיד על אמון רב בחברה. נוכחות של משקיעים מוסדיים מובילים המגדילים את פוזיציותיהם היא סימן חיובי מאוד לאמון בשווי החברה ובפוטנציאל הצמיחה שלה לטווח הארוך.<br><br><strong class="an-h">🏦 **פעילות Insiders:</strong>**<br>במהלך שלושת החודשים האחרונים נרשמו מספר עסקאות מכירה מצד בכירי החברה (President, Officer, General Counsel) בסכומים מצטברים של מיליוני דולרים (בהנחה שתאריכי 2026 הם טעות הקלדה ומתייחסים ל-2024). בעוד שמכירות מנהלים אינן בהכרח סימן שלילי (לרוב מדובר במימוש אופציות או תגמולים במסגרת תוכניות פיצויים), היעדר עסקאות רכישה מצד המנהלים יכול להצביע על כך שהם אינם רואים פוטנציאל עלייה משמעותי מהמחירים הנוכחיים בטווח הקצר. יחד עם זאת, בהתחשב באופי הגודל והמוסדי של החברה, אין בכך כדי לשלול לחלוטין את אטרקטיביות ההשקעה.<br><br><strong class="an-h">⚠️ **סיכונים עיקריים:</strong>**<br>1.  **סיכון רגולטורי:** ICE פועלת בתעשייה מפוקחת מאוד. שינויים ברגולציה פיננסית, הן לגבי פעילות הבורסות והסליקה והן לגבי נתוני מידע ושוקי חיזוי חדשים, עלולים להשפיע לרעה על פעילותה ורווחיותה.<br>2.  **תחרות חריפה:** למרות יתרונותיה התחרותיים, ICE מתמודדת עם תחרות מצד בורסות אחרות (כמו CME, Nasdaq), ספקי נתונים פיננסיים (Bloomberg, Refinitiv) וחברות פינטק חדשניות.<br>3.  **האטה כלכלית/תנודתיות שוק:** הכנסות ICE קשורות ישירות להיקפי המסחר ולפעילות בשווקים הפיננסיים. האטה כלכלית או ירידה בתנודתיות עלולה לפגוע בהכנסות ממסחר ושירותי נתונים.<br>4.  **סיכון טכנולוגי וסייבר:** כחברת תשתית פיננסית קריטית, ICE חשופה לסיכוני סייבר והפרעות טכנולוגיות שעלולות לגרום לנזקים תפעוליים, פיננסיים ותדמיתיים כבדים. אינטגרציה של טכנולוגיות שוקי חיזוי חדשות טומנת בחובה גם היא סיכונים טכנולוגיים ראשוניים.<br><br><strong class="an-h">✅ **תמצית:</strong>**<br>ICE היא חברה בעלת יתרונות תחרותיים חזקים ומוניטין מוכח, עם צמיחה פיננסית בריאה וציפיות לגידול משמעותי ברווחים. הטרנד של שוקי חיזוי מציע הזדמנות צמיחה חדשנית ומתאימה ליכולות הליבה שלה. מוסדיים גדולים מביעים אמון בה.<br><br>**האם מעניין לעקוב:** בהחלט מעניין לעקוב. ICE מציעה שילוב של יציבות מוסדית עם פוטנציאל צמיחה מתחדש בתחומים חדשניים.<br><br>**טריגר לכניסה:**<br>1.  **אישור טכני:** פריצת מחיר מעל הממוצעים הנעים ל-50 ו-200 יום, שתסמן היפוך מגמה חיובי ומומנטום עולה.<br>2.  **התפתחות הטרנד:** חדשות קונקרטיות או התקדמות מצד ICE ביכולתה למנף את הטרנד של שוקי החיזוי, לרבות שיתופי פעולה או השקות מוצרים חדשים בתחום.<br>3.  **נתונים רבעוניים חזקים:** דו&quot;ח רווחים עתידי שיאשש את ציפיות הצמיחה המהירות ברווח הנקי וב-EPS.<br>4.  **תיקון מחיר:** ירידה נוספת במחיר המניה לכיוון השפל של 52 השבועות, אם היא מלווה בחדשות שאינן פוגעות בטווח הארוך של החברה, עשויה להוות נקודת כניסה אטרקטיבית יותר.</div>
+  <div class="sc-score">
+    <span style="font-size:12px;color:#8b949e">ציון Gemini:</span>
+    <div class="score-bar-wrap">
+      <div class="score-bar-fill" style="width:0%;background:#f85149"></div>
+    </div>
+    <span class="score-label" style="color:#f85149">0/10</span>
+  </div>
+</div></div></div>
+<div class="tab-content"        id="tab-dividend"><div style="margin-bottom:14px">
+  <span style="font-size:12px;color:#6e7681">דוח חודשי: May 2026</span>
+</div>
+<div class="div-section-title">🇮🇱 שוק ישראלי</div>
+<div class="div-grid"><div class="div-card il">
+  <div class="dc-header">
+    <span class="dc-ticker">LUMI.TA</span>
+    <span class="dc-name">Bank Leumi le-Israel B.M.</span>
+    <span class="dc-sector">Financial Services</span>
+  </div>
+  <div class="dc-metrics">
+    <div class="dm"><div class="dm-l">תשואה נטו</div><div class="dm-v hi">3.5%</div></div>
+    <div class="dm"><div class="dm-l">Payout</div><div class="dm-v">38%</div></div>
+    <div class="dm"><div class="dm-l">ROE</div><div class="dm-v">16%</div></div>
+    <div class="dm"><div class="dm-l">שנות גידול</div><div class="dm-v">3y</div></div>
+    
+  </div>
+  <div class="dc-score">
+    ⭐ ציון Gemini: <strong style="color:#d29922">5/10</strong>
+    <div class="score-bar-wrap" style="flex:1;margin-right:8px">
+      <div class="score-bar-fill" style="width:50%;background:#d29922"></div>
+    </div>
+  </div>
+</div><div class="div-card il">
+  <div class="dc-header">
+    <span class="dc-ticker">MZTF.TA</span>
+    <span class="dc-name">Mizrahi Tefahot Bank Ltd.</span>
+    <span class="dc-sector">Financial Services</span>
+  </div>
+  <div class="dc-metrics">
+    <div class="dm"><div class="dm-l">תשואה נטו</div><div class="dm-v hi">3.3%</div></div>
+    <div class="dm"><div class="dm-l">Payout</div><div class="dm-v">42%</div></div>
+    <div class="dm"><div class="dm-l">ROE</div><div class="dm-v">17%</div></div>
+    <div class="dm"><div class="dm-l">שנות גידול</div><div class="dm-v">3y</div></div>
+    
+  </div>
+  <div class="dc-score">
+    ⭐ ציון Gemini: <strong style="color:#d29922">5/10</strong>
+    <div class="score-bar-wrap" style="flex:1;margin-right:8px">
+      <div class="score-bar-fill" style="width:50%;background:#d29922"></div>
+    </div>
+  </div>
+</div></div>
+<div class="div-section-title">🇺🇸 שוק אמריקאי</div>
+<div class="div-grid"><div class="div-card us">
+  <div class="dc-header">
+    <span class="dc-ticker">WMT</span>
+    <span class="dc-name">Walmart Inc.</span>
+    <span class="dc-sector">Consumer Defensive</span>
+  </div>
+  <div class="dc-metrics">
+    <div class="dm"><div class="dm-l">תשואה</div><div class="dm-v hi">75.0%</div></div>
+    <div class="dm"><div class="dm-l">Payout</div><div class="dm-v">34%</div></div>
+    <div class="dm"><div class="dm-l">ROE</div><div class="dm-v">22%</div></div>
+    <div class="dm"><div class="dm-l">שנות גידול</div><div class="dm-v">43y</div></div>
+    <div class="dm"><div class="dm-l">Chowder</div><div class="dm-v">80.5</div></div>
+  </div>
+  <div class="dc-score">
+    ⭐ ציון Gemini: <strong style="color:#d29922">6/10</strong>
+    <div class="score-bar-wrap" style="flex:1;margin-right:8px">
+      <div class="score-bar-fill" style="width:60%;background:#d29922"></div>
+    </div>
+  </div>
+</div><div class="div-card us">
+  <div class="dc-header">
+    <span class="dc-ticker">JNJ</span>
+    <span class="dc-name">Johnson &amp; Johnson</span>
+    <span class="dc-sector">Healthcare</span>
+  </div>
+  <div class="dc-metrics">
+    <div class="dm"><div class="dm-l">תשואה</div><div class="dm-v hi">2.3%</div></div>
+    <div class="dm"><div class="dm-l">Payout</div><div class="dm-v">60%</div></div>
+    <div class="dm"><div class="dm-l">ROE</div><div class="dm-v">26%</div></div>
+    <div class="dm"><div class="dm-l">שנות גידול</div><div class="dm-v">63y</div></div>
+    <div class="dm"><div class="dm-l">Chowder</div><div class="dm-v">7.6</div></div>
+  </div>
+  <div class="dc-score">
+    ⭐ ציון Gemini: <strong style="color:#3fb950">9/10</strong>
+    <div class="score-bar-wrap" style="flex:1;margin-right:8px">
+      <div class="score-bar-fill" style="width:90%;background:#3fb950"></div>
+    </div>
+  </div>
+</div><div class="div-card us">
+  <div class="dc-header">
+    <span class="dc-ticker">ADP</span>
+    <span class="dc-name">Automatic Data Processing, Inc.</span>
+    <span class="dc-sector">Technology</span>
+  </div>
+  <div class="dc-metrics">
+    <div class="dm"><div class="dm-l">תשואה</div><div class="dm-v hi">3.2%</div></div>
+    <div class="dm"><div class="dm-l">Payout</div><div class="dm-v">60%</div></div>
+    <div class="dm"><div class="dm-l">ROE</div><div class="dm-v">74%</div></div>
+    <div class="dm"><div class="dm-l">שנות גידול</div><div class="dm-v">23y</div></div>
+    <div class="dm"><div class="dm-l">Chowder</div><div class="dm-v">14.7</div></div>
+  </div>
+  <div class="dc-score">
+    ⭐ ציון Gemini: <strong style="color:#d29922">5/10</strong>
+    <div class="score-bar-wrap" style="flex:1;margin-right:8px">
+      <div class="score-bar-fill" style="width:50%;background:#d29922"></div>
+    </div>
+  </div>
+</div></div></div>
+<div class="tab-content"        id="tab-watchlist"><div class="wl-header">
+  <span class="wl-title">📋 רשימת מעקב אישית</span>
+  <div class="wl-input-wrap">
+    <input id="wl-input" type="text" placeholder="הקלד טיקר (AAPL, LUMI.TA...)">
+    <button class="btn-add" onclick="addTicker()">+ הוסף</button>
+  </div>
+</div>
+<div class="wl-table-wrap">
+  <table class="wl-table">
+    <thead><tr>
+      <th style="text-align:right">טיקר</th>
+      <th>מחיר</th>
+      <th>שינוי יומי</th>
+      <th>תשואת דיב'</th>
+      <th>הסר</th>
+    </tr></thead>
+    <tbody id="wl-tbody"></tbody>
+  </table>
+</div>
+<p class="wl-hint">⏱ המחירים מתרעננים כל 5 דקות אוטומטית | נשמר בדפדפן</p></div>
+
+<script>
+const INITIAL_WATCHLIST = ["AAPL", "MSFT", "LUMI.TA"];
+
+/* ── Tab switching ── */
+function switchTab(btn, id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  localStorage.setItem('activeTab', id);
+  if (id === 'watchlist') renderWatchlist();
+}
+
+/* Restore last tab */
+(function() {
+  const last = localStorage.getItem('activeTab') || 'news';
+  const btn = document.querySelector('[data-tab="' + last + '"]');
+  if (btn) switchTab(btn, last);
+})();
+
+/* ── Watchlist ── */
+let watchlist = JSON.parse(localStorage.getItem('watchlistTickers') || 'null');
+if (!watchlist) {
+  watchlist = INITIAL_WATCHLIST;
+  localStorage.setItem('watchlistTickers', JSON.stringify(watchlist));
+}
+
+function addTicker() {
+  const inp = document.getElementById('wl-input');
+  const t   = inp.value.trim().toUpperCase();
+  if (!t || watchlist.includes(t)) { inp.value=''; return; }
+  watchlist.push(t);
+  localStorage.setItem('watchlistTickers', JSON.stringify(watchlist));
+  inp.value = '';
+  renderWatchlist();
+  fetchPrices([t]);
+}
+
+function removeTicker(t) {
+  watchlist = watchlist.filter(x => x !== t);
+  localStorage.setItem('watchlistTickers', JSON.stringify(watchlist));
+  document.getElementById('wl-row-' + t.replace('.','_'))?.remove();
+}
+
+function renderWatchlist() {
+  const tbody = document.getElementById('wl-tbody');
+  tbody.innerHTML = watchlist.map(t => `
+    <tr id="wl-row-${t.replace('.','_')}">
+      <td class="wl-ticker">${t}</td>
+      <td class="wl-price" id="wl-p-${t.replace('.','_')}">⏳</td>
+      <td class="wl-chg"   id="wl-c-${t.replace('.','_')}">–</td>
+      <td class="wl-yield" id="wl-y-${t.replace('.','_')}">–</td>
+      <td><button class="btn-remove" onclick="removeTicker('${t}')">✕</button></td>
+    </tr>`).join('');
+  fetchPrices(watchlist);
+}
+
+async function fetchPrices(tickers) {
+  for (const t of tickers) {
+    try {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${t}?interval=1d&range=5d&includePrePost=false`;
+      const r   = await fetch(url, {headers:{'User-Agent':'Mozilla/5.0'}});
+      const d   = await r.json();
+      const res = d.chart?.result?.[0];
+      if (!res) continue;
+      const closes = (res.indicators.quote[0].close || []).filter(v => v != null);
+      const cur  = closes.at(-1);
+      const prev = closes.at(-2) ?? cur;
+      const chg  = prev ? (cur - prev) / prev * 100 : 0;
+      const cur$ = res.meta.currency === 'ILS' ? cur.toFixed(2) + '₪' : '$' + cur.toFixed(2);
+      const safe = t.replace('.','_');
+      const pEl = document.getElementById('wl-p-' + safe);
+      const cEl = document.getElementById('wl-c-' + safe);
+      if (pEl) pEl.textContent = cur$;
+      if (cEl) {
+        cEl.textContent = (chg >= 0 ? '▲ +' : '▼ ') + chg.toFixed(2) + '%';
+        cEl.className   = 'wl-chg ' + (chg >= 0 ? 'up' : 'down');
+      }
+    } catch(e) {
+      const safe = t.replace('.','_');
+      const p = document.getElementById('wl-p-' + safe);
+      if (p) p.textContent = 'N/A';
+    }
+  }
+}
+
+document.getElementById('wl-input')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTicker();
+});
+
+/* Auto-refresh watchlist prices every 5 min */
+setInterval(() => fetchPrices(watchlist), 5 * 60 * 1000);
+</script>
+</body>
+</html>
