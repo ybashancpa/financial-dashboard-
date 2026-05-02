@@ -21,7 +21,8 @@ from typing import Optional
 import feedparser
 import yfinance as yf
 import pandas as pd
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
@@ -67,12 +68,11 @@ REQUEST_HEADERS = {
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def pick_gemini_model(api_key: str) -> str:
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     try:
         available = {
             m.name.replace("models/", "")
-            for m in genai.list_models()
-            if "generateContent" in getattr(m, "supported_generation_methods", [])
+            for m in client.models.list()
         }
         for candidate in GEMINI_CANDIDATES:
             if candidate in available:
@@ -187,8 +187,9 @@ class NewsFetcher:
 
 # ── Trend Identifier ───────────────────────────────────────────────────────────
 class TrendIdentifier:
-    def __init__(self, model) -> None:
-        self.model = model
+    def __init__(self, client, model_name) -> None:
+        self._client = client
+        self._model_name = model_name
 
     def identify(self, headlines: list[str]) -> list[dict]:
         bullets = "\n".join(f"• {h}" for h in headlines)
@@ -205,7 +206,7 @@ class TrendIdentifier:
         )
         for attempt in range(3):
             try:
-                resp  = self.model.generate_content(prompt)
+                resp  = self._client.models.generate_content(model=self._model_name, contents=prompt)
                 text  = resp.text.strip()
                 trends = parse_json_from_gemini(text)
                 log.info("Identified trends: %s", [t.get("ticker") for t in trends])
@@ -339,8 +340,9 @@ class StockDataCollector:
 
 # ── Stock Analysis Generator ───────────────────────────────────────────────────
 class StockAnalysisGenerator:
-    def __init__(self, model) -> None:
-        self.model = model
+    def __init__(self, client, model_name) -> None:
+        self._client = client
+        self._model_name = model_name
 
     def analyze(self, stock: dict, trend: dict) -> str:
         fin_text = self._fmt_financials(stock["financials"])
@@ -420,7 +422,7 @@ RSI(14): {rsi} | P/E: {pe} | Forward P/E: {fpe}
 
         for attempt in range(3):
             try:
-                resp = self.model.generate_content(prompt)
+                resp = self._client.models.generate_content(model=self._model_name, contents=prompt)
                 text = resp.text.strip()
                 if text:
                     return text
@@ -680,15 +682,15 @@ def main() -> None:
         log.error("Missing env vars: %s – check .env", ", ".join(missing))
         sys.exit(1)
 
-    # Build Gemini model
-    model_name = pick_gemini_model(gemini_key)
-    model      = genai.GenerativeModel(model_name=model_name)
+    # Build Gemini client
+    gemini_client = genai.Client(api_key=gemini_key)
+    model_name    = pick_gemini_model(gemini_key)
 
     # Components
     fetcher    = NewsFetcher()
-    identifier = TrendIdentifier(model)
+    identifier = TrendIdentifier(gemini_client, model_name)
     collector  = StockDataCollector()
-    analyzer   = StockAnalysisGenerator(model)
+    analyzer   = StockAnalysisGenerator(gemini_client, model_name)
     sender     = EmailSender(user=gmail_user, app_password=gmail_app_pw)
 
     # Date range
