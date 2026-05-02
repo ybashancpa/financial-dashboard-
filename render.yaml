@@ -3,4 +3,4 @@ services:
     name: financial-dashboard
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    startCommand: gunicorn app:app

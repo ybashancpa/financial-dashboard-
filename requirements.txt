@@ -1,7 +1,6 @@
 flask>=3.0.0
 gunicorn
 google-genai>=1.0.0
-google-generativeai
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 lxml>=5.1.0
