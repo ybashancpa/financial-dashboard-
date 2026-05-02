@@ -761,10 +761,10 @@ def main() -> None:
         with open(os.path.join(_data_dir, "stock_spotlight_latest.json"), "w", encoding="utf-8") as _f:
             _json.dump(_payload, _f, ensure_ascii=False, indent=2)
         try:
-            from gdrive_sync import upload_json as _gdrive_upload
-            _gdrive_upload("stock_spotlight_latest.json", _payload)
+            from sync_to_render import sync_to_render as _sync
+            _sync("stock_spotlight_latest.json", _payload)
         except Exception as _e2:
-            log.warning("Drive upload failed: %s", _e2)
+            log.warning("Render sync failed: %s", _e2)
         import subprocess
         subprocess.Popen(
             [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashboard_builder.py")],

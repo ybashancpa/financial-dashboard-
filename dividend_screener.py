@@ -927,11 +927,11 @@ def main(test_mode: bool = False) -> None:
                 "us_stocks": [_to_dict(d) for d in us_selected],
             }, _f, ensure_ascii=False, indent=2, default=str)
         try:
-            from gdrive_sync import upload_json as _gdrive_upload
+            from sync_to_render import sync_to_render as _sync
             with open(os.path.join(_data_dir, "dividend_latest.json"), encoding="utf-8") as _rf:
-                _gdrive_upload("dividend_latest.json", _json.load(_rf))
+                _sync("dividend_latest.json", _json.load(_rf))
         except Exception as _e2:
-            log.warning("Drive upload failed: %s", _e2)
+            log.warning("Render sync failed: %s", _e2)
         import subprocess
         subprocess.Popen(
             [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashboard_builder.py")],
