@@ -17,7 +17,7 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
 # ── Setup ────────────────────────────────────────────────────────────────────
 
@@ -50,8 +50,7 @@ GMAIL_APP_PASS  = os.getenv("GMAIL_APP_PASSWORD", "")
 RECIPIENT       = os.getenv("RECIPIENT_EMAIL") or GMAIL_USER
 GEMINI_KEY      = os.getenv("GEMINI_API_KEY", "")
 
-if GEMINI_KEY:
-    genai.configure(api_key=GEMINI_KEY)
+gemini_client = genai.Client(api_key=GEMINI_KEY) if GEMINI_KEY else None
 
 HEADERS = {
     "User-Agent": (
@@ -378,8 +377,7 @@ def summarize(title: str, content: str) -> str:
 
     for model_name in ["gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash-001"]:
         try:
-            model  = genai.GenerativeModel(model_name)
-            result = model.generate_content(prompt)
+            result = gemini_client.models.generate_content(model=model_name, contents=prompt)
             lines  = [l.strip() for l in result.text.strip().splitlines() if l.strip()]
             lines  = lines[:3]
             while len(lines) < 3:
@@ -398,8 +396,7 @@ def daily_insight(all_articles: list[dict]) -> str:
     prompt = f"""בהתבסס על עדכוני המס הבאים של היום, כתוב משפט אחד בעברית שמחבר בין הנושאים לתמונה הגדולה:
 {titles}"""
     try:
-        model  = genai.GenerativeModel("gemini-2.5-flash")
-        result = model.generate_content(prompt)
+        result = gemini_client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
         return result.text.strip().splitlines()[0].strip()
     except Exception:
         return ""
