@@ -451,6 +451,12 @@ def main() -> None:
                     for sec, arts in summarized.items()
                 }
             }, _f, ensure_ascii=False, indent=2)
+        try:
+            from gdrive_sync import upload_json as _gdrive_upload
+            with open(os.path.join(_data_dir, "globes_latest.json"), encoding="utf-8") as _rf:
+                _gdrive_upload("globes_latest.json", _json.load(_rf))
+        except Exception as _e2:
+            log.warning("Drive upload failed: %s", _e2)
         import subprocess
         subprocess.Popen(
             [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashboard_builder.py")],

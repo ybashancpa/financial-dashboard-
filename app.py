@@ -15,6 +15,21 @@ load_dotenv()
 app = Flask(__name__)
 DATA_DIR = Path(__file__).parent / "data"
 
+IS_RENDER = bool(os.getenv('RENDER'))
+if IS_RENDER:
+    from gdrive_sync import download_json as _gdrive_dl
+    DATA_DIR.mkdir(exist_ok=True)
+    for _fname in ('globes_latest.json', 'international_latest.json',
+                   'stock_spotlight_latest.json', 'dividend_latest.json'):
+        try:
+            _d = _gdrive_dl(_fname)
+            if _d:
+                (DATA_DIR / _fname).write_text(
+                    json.dumps(_d, ensure_ascii=False, indent=2), encoding='utf-8'
+                )
+        except Exception as _e:
+            print(f"[startup] {_fname}: {_e}")
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
