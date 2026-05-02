@@ -17,7 +17,8 @@ from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -92,12 +93,11 @@ GEMINI_CANDIDATES = [
 # ── Gemini model auto-detection ───────────────────────────────────────────────
 def pick_gemini_model(api_key: str) -> str:
     """Return the first available model from GEMINI_CANDIDATES."""
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     try:
         available = {
             m.name.replace("models/", "")
-            for m in genai.list_models()
-            if "generateContent" in getattr(m, "supported_generation_methods", [])
+            for m in client.models.list()
         }
         log.info("Available Gemini models: %s", available)
         for candidate in GEMINI_CANDIDATES:
@@ -228,11 +228,9 @@ class GlobesScraper:
 # ── Gemini Summarizer ─────────────────────────────────────────────────────────
 class GeminiSummarizer:
     def __init__(self, api_key: str) -> None:
-        model_name = pick_gemini_model(api_key)
-        self.model = genai.GenerativeModel(
-            model_name=model_name,
-            system_instruction=SYSTEM_PROMPT,
-        )
+        self._model = pick_gemini_model(api_key)
+        self._client = genai.Client(api_key=api_key)
+        self._config = types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT)
 
     def summarize_articles(self, articles: list[dict]) -> dict[str, list[dict]]:
         result: dict[str, list[dict]] = {}
@@ -265,7 +263,7 @@ class GeminiSummarizer:
         )
         for attempt in range(3):
             try:
-                resp = self.model.generate_content(prompt)
+                resp = self._client.models.generate_content(model=self._model, contents=prompt, config=self._config)
                 text = self._extract_text(resp)
                 if text:
                     return text
@@ -291,7 +289,7 @@ class GeminiSummarizer:
             "כתוב 2-3 משפטי מבוא המסכמים את הנושאים המרכזיים של היום."
         )
         try:
-            resp = self.model.generate_content(prompt)
+            resp = self._client.models.generate_content(model=self._model, contents=prompt, config=self._config)
             return self._extract_text(resp)
         except Exception as exc:
             log.error("Intro paragraph error: %s", exc)
