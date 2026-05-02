@@ -2,24 +2,25 @@ import os
 import io
 import json
 
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
-from google.oauth2 import service_account
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 FOLDER_ID = os.getenv('GOOGLE_DRIVE_FOLDER_ID', '')
 
-_BASE = os.path.dirname(os.path.abspath(__file__))
-_CREDS_FILE = os.getenv('GOOGLE_CREDENTIALS_FILE',
-                         os.path.join(_BASE, 'credentials.json'))
-if not os.path.exists(_CREDS_FILE):
-    _CREDS_FILE = '/etc/secrets/credentials.json'
-
 
 def _service():
-    creds = service_account.Credentials.from_service_account_file(
-        _CREDS_FILE, scopes=SCOPES
+    creds = Credentials(
+        token=None,
+        refresh_token=os.getenv('GOOGLE_REFRESH_TOKEN'),
+        client_id=os.getenv('GOOGLE_CLIENT_ID'),
+        client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+        token_uri='https://oauth2.googleapis.com/token',
+        scopes=SCOPES,
     )
+    creds.refresh(Request())
     return build('drive', 'v3', credentials=creds, cache_discovery=False)
 
 
