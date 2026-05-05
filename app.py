@@ -14,11 +14,52 @@ load_dotenv()
 
 app = Flask(__name__)
 DATA_DIR = Path(__file__).parent / "data"
-
 DATA_DIR.mkdir(exist_ok=True)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
+# ── Upstash Redis ─────────────────────────────────────────────────────────────
+_redis = None
+_REDIS_URL   = os.getenv("UPSTASH_REDIS_REST_URL", "")
+_REDIS_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "")
+if _REDIS_URL and _REDIS_TOKEN:
+    try:
+        from upstash_redis import Redis as _Redis
+        _redis = _Redis(url=_REDIS_URL, token=_REDIS_TOKEN)
+    except Exception as _e:
+        print(f"[redis] init failed: {_e}")
+
+
+def _to_key(filename: str) -> str:
+    """Convert 'globes_latest.json' → 'globes_latest'."""
+    return filename.removesuffix(".json")
+
+
+def read_data(key: str) -> dict:
+    if _redis:
+        try:
+            val = _redis.get(key)
+            if val:
+                return json.loads(val)
+            return {}
+        except Exception as e:
+            app.logger.warning("Redis read '%s': %s", key, e)
+    # local-dev fallback
+    path = DATA_DIR / f"{key}.json"
+    return read_json(path)
+
+
+def write_data(key: str, data: dict) -> None:
+    if _redis:
+        try:
+            _redis.set(key, json.dumps(data, ensure_ascii=False))
+            return
+        except Exception as e:
+            app.logger.warning("Redis write '%s': %s", key, e)
+    # local-dev fallback
+    write_json(DATA_DIR / f"{key}.json", data)
+
 
 MACRO_SPECS = [
     {"label": "דולר/שקל", "ticker": "ILS=X",    "unit": "₪", "dec": 3},
@@ -145,22 +186,22 @@ def api_macro():
 @app.route("/api/news")
 def api_news():
     return jsonify({
-        "globes": read_json(DATA_DIR / "globes_latest.json"),
-        "international": read_json(DATA_DIR / "international_latest.json"),
+        "globes":         read_data("globes_latest"),
+        "international":  read_data("international_latest"),
     })
 
 
 @app.route("/api/stocks")
 def api_stocks():
-    return jsonify(read_json(DATA_DIR / "stock_spotlight_latest.json"))
+    return jsonify(read_data("stock_spotlight_latest"))
 
 
 @app.route("/api/dividends")
 def api_dividends():
-    data = read_json(DATA_DIR / "dividend_latest.json")
+    data = read_data("dividend_latest")
     for s in data.get("us_stocks", []):
         gy = s.get("gross_yield")
-        if gy and gy > 0.5:  # stored 100x too large due to yfinance format change
+        if gy and gy > 0.5:
             s["gross_yield"] = gy / 100
             s["net_yield_il"] = s["gross_yield"] * 0.75
             cagr = s.get("div5_cagr") or 0
@@ -171,7 +212,7 @@ def api_dividends():
 
 @app.route("/api/watchlist", methods=["GET"])
 def api_watchlist_get():
-    tickers = read_json(DATA_DIR / "watchlist.json").get("tickers", [])
+    tickers = read_data("watchlist").get("tickers", [])
     return jsonify({"tickers": [fetch_ticker_live(t) for t in tickers]})
 
 
@@ -181,11 +222,11 @@ def api_watchlist_add():
     ticker = body.get("ticker", "").strip().upper()
     if not ticker:
         return jsonify({"error": "ticker required"}), 400
-    wl = read_json(DATA_DIR / "watchlist.json")
+    wl = read_data("watchlist")
     tickers = wl.get("tickers", [])
     if ticker not in tickers:
         tickers.append(ticker)
-        write_json(DATA_DIR / "watchlist.json", {"tickers": tickers})
+        write_data("watchlist", {"tickers": tickers})
     return jsonify(fetch_ticker_live(ticker))
 
 
@@ -195,9 +236,8 @@ def api_watchlist_remove():
     ticker = body.get("ticker", "").strip().upper()
     if not ticker:
         return jsonify({"error": "ticker required"}), 400
-    wl = read_json(DATA_DIR / "watchlist.json")
-    write_json(DATA_DIR / "watchlist.json",
-               {"tickers": [x for x in wl.get("tickers", []) if x != ticker]})
+    wl = read_data("watchlist")
+    write_data("watchlist", {"tickers": [x for x in wl.get("tickers", []) if x != ticker]})
     return jsonify({"ok": True})
 
 
@@ -335,10 +375,9 @@ def update_data():
     body = request.get_json()
     filename = body.get('filename')
     data = body.get('data')
-    DATA_DIR.mkdir(exist_ok=True)
-    with open(DATA_DIR / filename, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    return jsonify({'status': 'ok', 'file': filename})
+    key = _to_key(filename)
+    write_data(key, data)
+    return jsonify({'status': 'ok', 'key': key})
 
 
 @app.route('/ping')
