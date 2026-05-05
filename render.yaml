@@ -7,3 +7,7 @@ services:
     envVars:
       - key: DASHBOARD_SECRET_KEY
         value: financial2026
+      - key: UPSTASH_REDIS_REST_URL
+        value: https://clean-cub-115740.upstash.io
+      - key: UPSTASH_REDIS_REST_TOKEN
+        value: gQAAAAAAAcQcAAIgcDExNTQ0YzY1NjZhMjA0YzQwYWNlZjFjM2RkZjQzYmRhMA
