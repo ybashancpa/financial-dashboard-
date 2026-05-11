@@ -174,23 +174,10 @@ def send_dividend_demo():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5. Tax Briefing (kolmas.net) – runs live with real login
-# ─────────────────────────────────────────────────────────────────────────────
-def send_tax_demo():
-    log.info("── 5/5 Sending Tax Briefing (live run) ──")
-    try:
-        import tax_briefing
-        tax_briefing.main()
-    except Exception as e:
-        log.error("Tax Briefing error: %s", e)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    log.info("═══ שולח 5 אימיילי דמו ═══")
+    log.info("═══ שולח 4 אימיילי דמו ═══")
     send_globes_demo()
     send_international_demo()
     send_stocks_demo()
     send_dividend_demo()
-    send_tax_demo()
     log.info("═══ סיום שליחת דמו ═══")
