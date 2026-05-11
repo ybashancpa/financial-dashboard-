@@ -116,11 +116,7 @@ ILS_MARKET_CAP_MIN = 500_000_000   # 500M ILS
 def pick_gemini_model(api_key: str) -> str:
     client = genai.Client(api_key=api_key)
     try:
-        available = {
-            m.name.replace("models/", "")
-            for m in client.models.list()
-            if "generateContent" in getattr(m, "supported_generation_methods", [])
-        }
+        available = {m.name.replace("models/", "") for m in client.models.list()}
         for c in GEMINI_CANDIDATES:
             if c in available:
                 log.info("Gemini model: %s", c)
@@ -129,7 +125,7 @@ def pick_gemini_model(api_key: str) -> str:
             return next(iter(available))
     except Exception as exc:
         log.warning("Model list failed: %s", exc)
-    return "gemini-2.0-flash"
+    return "gemini-2.5-flash"
 
 
 def safe_float(val, default=None) -> Optional[float]:
